@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Doctrine\Tests\ORM\Functional;
 
+use Doctrine\Common\Util\Debug;
 use Doctrine\ORM\Query;
 use Doctrine\Tests\Models\CMS\CmsAddress;
 use Doctrine\Tests\Models\CMS\CmsAddressDTO;
@@ -11,8 +12,8 @@ use Doctrine\Tests\Models\CMS\CmsEmail;
 use Doctrine\Tests\Models\CMS\CmsPhonenumber;
 use Doctrine\Tests\Models\CMS\CmsUser;
 use Doctrine\Tests\Models\CMS\CmsUserDTO;
+use Doctrine\Tests\Models\CMS\CmsUserWithArticlesCountDTO;
 use Doctrine\Tests\OrmFunctionalTestCase;
-
 use function count;
 
 /**
@@ -63,32 +64,32 @@ class NewOperatorTest extends OrmFunctionalTestCase
         $u3->addPhonenumber(new CmsPhonenumber());
         $u3->addPhonenumber(new CmsPhonenumber());
 
-        $u1->name                         = 'Test 1';
-        $u1->username                     = '1test';
-        $u1->status                       = 'developer';
-        $u1->email->email                 = 'email@test1.com';
-        $u1->address->zip                 = '111111111';
-        $u1->address->city                = 'Some City 1';
-        $u1->address->country             = 'Some Country 2';
+        $u1->name = 'Test 1';
+        $u1->username = '1test';
+        $u1->status = 'developer';
+        $u1->email->email = 'email@test1.com';
+        $u1->address->zip = '111111111';
+        $u1->address->city = 'Some City 1';
+        $u1->address->country = 'Some Country 2';
         $u1->phonenumbers[0]->phonenumber = '(11) 1111-1111';
 
-        $u2->name                         = 'Test 2';
-        $u2->username                     = '2test';
-        $u2->status                       = 'developer';
-        $u2->email->email                 = 'email@test2.com';
-        $u2->address->zip                 = '222222222';
-        $u2->address->city                = 'Some City 2';
-        $u2->address->country             = 'Some Country 2';
+        $u2->name = 'Test 2';
+        $u2->username = '2test';
+        $u2->status = 'developer';
+        $u2->email->email = 'email@test2.com';
+        $u2->address->zip = '222222222';
+        $u2->address->city = 'Some City 2';
+        $u2->address->country = 'Some Country 2';
         $u2->phonenumbers[0]->phonenumber = '(22) 1111-1111';
         $u2->phonenumbers[1]->phonenumber = '(22) 2222-2222';
 
-        $u3->name                         = 'Test 3';
-        $u3->username                     = '3test';
-        $u3->status                       = 'developer';
-        $u3->email->email                 = 'email@test3.com';
-        $u3->address->zip                 = '33333333';
-        $u3->address->city                = 'Some City 3';
-        $u3->address->country             = 'Some Country 3';
+        $u3->name = 'Test 3';
+        $u3->username = '3test';
+        $u3->status = 'developer';
+        $u3->email->email = 'email@test3.com';
+        $u3->address->zip = '33333333';
+        $u3->address->city = 'Some City 3';
+        $u3->address->country = 'Some Country 3';
         $u3->phonenumbers[0]->phonenumber = '(33) 1111-1111';
         $u3->phonenumbers[1]->phonenumber = '(33) 2222-2222';
         $u3->phonenumbers[2]->phonenumber = '(33) 3333-3333';
@@ -124,7 +125,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult($hydrationMode);
 
         $this->assertCount(3, $result);
@@ -144,6 +145,39 @@ class NewOperatorTest extends OrmFunctionalTestCase
         $this->assertEquals($this->fixtures[0]->address->city, $result[0]->address);
         $this->assertEquals($this->fixtures[1]->address->city, $result[1]->address);
         $this->assertEquals($this->fixtures[2]->address->city, $result[2]->address);
+    }
+
+    public function testShouldSupportsBasicUsageWithEntity(): void
+    {
+        $dql = '
+            SELECT
+                new '.CmsUserWithArticlesCountDTO::class.'(
+                    u
+                )
+            FROM
+                Doctrine\Tests\Models\CMS\CmsUser u
+            GROUP BY u.id';
+
+        $query = $this->_em->createQuery($dql);
+        $result = $query->getResult();
+
+        $this->assertCount(3, $result);
+
+        $this->assertInstanceOf(CmsUserWithArticlesCountDTO::class, $result[0]);
+        $this->assertInstanceOf(CmsUserWithArticlesCountDTO::class, $result[1]);
+        $this->assertInstanceOf(CmsUserWithArticlesCountDTO::class, $result[2]);
+
+        $this->assertEquals($this->fixtures[0]->name, $result[0]->user->name);
+        $this->assertEquals($this->fixtures[1]->name, $result[1]->user->name);
+        $this->assertEquals($this->fixtures[2]->name, $result[2]->user->name);
+
+        $this->assertEquals($this->fixtures[0]->email->email, $result[0]->user->email);
+        $this->assertEquals($this->fixtures[1]->email->email, $result[1]->user->email);
+        $this->assertEquals($this->fixtures[2]->email->email, $result[2]->user->email);
+
+        $this->assertEquals($this->fixtures[0]->address->city, $result[0]->user->address);
+        $this->assertEquals($this->fixtures[1]->address->city, $result[1]->user->address);
+        $this->assertEquals($this->fixtures[2]->address->city, $result[2]->user->address);
     }
 
     /**
@@ -167,7 +201,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult($hydrationMode);
 
         $this->assertCount(3, $result);
@@ -203,7 +237,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -230,7 +264,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
         $this->_em->getConfiguration()
             ->addEntityNamespace('cms', 'Doctrine\Tests\Models\CMS');
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -257,7 +291,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
         $this->_em->getConfiguration()
             ->addEntityNamespace('cms', 'Doctrine\Tests\Models\CMS');
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -290,7 +324,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name";
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -337,7 +371,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name";
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -378,7 +412,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -438,7 +472,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -498,7 +532,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -556,7 +590,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -607,7 +641,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -658,7 +692,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -710,7 +744,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -766,7 +800,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -822,7 +856,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -879,7 +913,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -940,7 +974,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -1001,7 +1035,7 @@ class NewOperatorTest extends OrmFunctionalTestCase
             ORDER BY
                 u.name';
 
-        $query  = $this->_em->createQuery($dql);
+        $query = $this->_em->createQuery($dql);
         $result = $query->getResult();
 
         $this->assertCount(3, $result);
@@ -1042,7 +1076,9 @@ class NewOperatorTest extends OrmFunctionalTestCase
     public function testInvalidClassException(): void
     {
         $this->expectException('Doctrine\ORM\Query\QueryException');
-        $this->expectExceptionMessage('[Semantical Error] line 0, col 11 near \'\InvalidClass(u.name)\': Error: Class "\InvalidClass" is not defined.');
+        $this->expectExceptionMessage(
+            '[Semantical Error] line 0, col 11 near \'\InvalidClass(u.name)\': Error: Class "\InvalidClass" is not defined.'
+        );
         $dql = 'SELECT new \InvalidClass(u.name) FROM Doctrine\Tests\Models\CMS\CmsUser u';
         $this->_em->createQuery($dql)->getResult();
     }
@@ -1050,7 +1086,9 @@ class NewOperatorTest extends OrmFunctionalTestCase
     public function testInvalidClassConstructorException(): void
     {
         $this->expectException('Doctrine\ORM\Query\QueryException');
-        $this->expectExceptionMessage('[Semantical Error] line 0, col 11 near \'\stdClass(u.name)\': Error: Class "\stdClass" has not a valid constructor.');
+        $this->expectExceptionMessage(
+            '[Semantical Error] line 0, col 11 near \'\stdClass(u.name)\': Error: Class "\stdClass" has not a valid constructor.'
+        );
         $dql = 'SELECT new \stdClass(u.name) FROM Doctrine\Tests\Models\CMS\CmsUser u';
         $this->_em->createQuery($dql)->getResult();
     }
@@ -1058,7 +1096,9 @@ class NewOperatorTest extends OrmFunctionalTestCase
     public function testInvalidClassWithoutConstructorException(): void
     {
         $this->expectException('Doctrine\ORM\Query\QueryException');
-        $this->expectExceptionMessage('[Semantical Error] line 0, col 11 near \'Doctrine\Tests\ORM\Functional\ClassWithTooMuchArgs(u.name)\': Error: Number of arguments does not match with "Doctrine\Tests\ORM\Functional\ClassWithTooMuchArgs" constructor declaration.');
+        $this->expectExceptionMessage(
+            '[Semantical Error] line 0, col 11 near \'Doctrine\Tests\ORM\Functional\ClassWithTooMuchArgs(u.name)\': Error: Number of arguments does not match with "Doctrine\Tests\ORM\Functional\ClassWithTooMuchArgs" constructor declaration.'
+        );
         $dql = 'SELECT new Doctrine\Tests\ORM\Functional\ClassWithTooMuchArgs(u.name) FROM Doctrine\Tests\Models\CMS\CmsUser u';
         $this->_em->createQuery($dql)->getResult();
     }
@@ -1066,7 +1106,9 @@ class NewOperatorTest extends OrmFunctionalTestCase
     public function testClassCantBeInstantiatedException(): void
     {
         $this->expectException('Doctrine\ORM\Query\QueryException');
-        $this->expectExceptionMessage('[Semantical Error] line 0, col 11 near \'Doctrine\Tests\ORM\Functional\ClassWithPrivateConstructor(u.name)\': Error: Class "Doctrine\Tests\ORM\Functional\ClassWithPrivateConstructor" can not be instantiated.');
+        $this->expectExceptionMessage(
+            '[Semantical Error] line 0, col 11 near \'Doctrine\Tests\ORM\Functional\ClassWithPrivateConstructor(u.name)\': Error: Class "Doctrine\Tests\ORM\Functional\ClassWithPrivateConstructor" can not be instantiated.'
+        );
         $dql = 'SELECT new Doctrine\Tests\ORM\Functional\ClassWithPrivateConstructor(u.name) FROM Doctrine\Tests\Models\CMS\CmsUser u';
         $this->_em->createQuery($dql)->getResult();
     }
